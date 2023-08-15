@@ -2,3 +2,5 @@ deepface==0.0.79
 uvicorn==0.23.2
 fastapi==0.101.0
 python-multipart==0.0.6
+WebSockets==11.0.3
+psutil==5.9.5

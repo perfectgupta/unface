@@ -1,8 +1,10 @@
-import json
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+import psutil
 from faceapi import FaceModules as FM
 import tempfile
+import asyncio
 
 app = FastAPI(
     docs_url='/docs/protected',
@@ -34,10 +36,6 @@ app.add_middleware(
     allow_methods=methods,
     allow_headers=['*'],
 )
-
-@app.get("/main")
-def main_api():
-    return {"message": 'Hello, It is working!'}
 
 @app.post("/face/analyse")
 async def face_analyzer(image: UploadFile):
@@ -128,9 +126,93 @@ async def face_extractor(image: UploadFile):
         return result
     else:
         return "Image was not found!"
+    
+    
+html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UnFace Current CPU Util</title>
+    <style>
+        .green {
+            color: green;
+        }
+        .yellow {
+            color: yellow;
+        }
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>UnFace Current CPU Util</h1>
+    <button onclick="startWebSocket()">Start</button>
+    <button onclick="stopWebSocket()">Stop</button>
+    <div id="responseArea"></div>
+    <script>
+        var ws = null;
 
+        function startWebSocket() {
+            if (ws !== null) {
+                ws.close();
+            }
+            ws = new WebSocket("ws://localhost:8086/ws");
+            ws.onmessage = function(event) {
+                var responseArea = document.getElementById('responseArea');
+                var message = document.createElement('p');
+                var content = document.createTextNode(event.data);
+                message.appendChild(content);
+
+                var cpuUtilization = parseFloat(event.data.match(/CPU Utilization: (\d+\.\d+)%/)[1]);
+
+                if (cpuUtilization < 45) {
+                    message.classList.add('green');
+                } else if (cpuUtilization >= 45 && cpuUtilization <= 70) {
+                    message.classList.add('yellow');
+                } else {
+                    message.classList.add('red');
+                }
+
+                responseArea.appendChild(message);
+            };
+        }
+
+        function stopWebSocket() {
+            if (ws !== null) {
+                ws.close();
+                ws = null;
+            }
+        }
+    </script>
+</body>
+</html>
+
+"""
+
+@app.get("/face/monitor")
+async def get():
+    return HTMLResponse(html)
+
+async def send_cpu_utilization(websocket: WebSocket):
+    while True:
+        try:
+            # Get CPU utilization using psutil
+            cpu_usage = psutil.cpu_percent(interval=1)
+            
+            await websocket.send_text(f"CPU Utilization: {cpu_usage}%")
+        except Exception as e:
+            await websocket.send_text(f"Error: {str(e)}")
+        await asyncio.sleep(0.2)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    await send_cpu_utilization(websocket)
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8086)
+    
+# uvicorn unface:app --port 8086  --reload
