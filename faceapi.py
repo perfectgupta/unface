@@ -30,7 +30,7 @@ class FaceModules:
         face = DeepFace.extract_faces(img_path = image,
                                             # target_size = (224, 224), 
                                             detector_backend = backends[backend],
-                                            enforce_detection=False
+                                            enforce_detection=False,
                                         )
         
         processed_result = FaceModules.preprocess_result(face)
@@ -103,12 +103,27 @@ class FaceModules:
                     "dominant_race": face[0]['dominant_race'],
                 }]
         
+    # models = [
+    #     "VGG-Face", 
+    #     "Facenet", 
+    #     "Facenet512", 
+    #     "OpenFace", 
+    #     "DeepFace", 
+    #     "DeepID", 
+    #     "ArcFace", 
+    #     "Dlib", 
+    #     "SFace",
+    # ]
         
     def face_verification(image1, image2, backend):
+        
         obj = DeepFace.verify(img1_path = image1, 
                                 img2_path = image2, 
                                 detector_backend = backends[backend],
-                                enforce_detection=False
+                                enforce_detection=False,
+                                model_name = "Facenet",
+                                distance_metric="euclidean"
+                                
                             )
         
         return obj
@@ -150,4 +165,4 @@ class FaceModules:
 # face_objs = DeepFace.extract_faces(img_path = "img.jpg", 
 #         target_size = (224, 224), 
 #         detector_backend = backends[4]
-# )
+# )\

@@ -1,13 +1,10 @@
-from fastapi import FastAPI, UploadFile, WebSocket
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-import psutil
 from faceapi import FaceModules as FM
 import tempfile
-import asyncio
 
 app = FastAPI(
-    docs_url='/docs/protected',
+    docs_url='face/docs/protected',
 )
 
 
@@ -29,11 +26,11 @@ methods = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    # allow_origins=["*"],
+    # allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
-    # allow_methods=["*"],
-    allow_methods=methods,
+    allow_methods=["*"],
+    # allow_methods=methods,
     allow_headers=['*'],
 )
 
@@ -127,8 +124,11 @@ async def face_extractor(image: UploadFile):
     else:
         return "Image was not found!"
     
+
     
-html = """
+    
+# html = 
+"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -157,7 +157,7 @@ html = """
             if (ws !== null) {
                 ws.close();
             }
-            ws = new WebSocket("ws://localhost:8086/ws");
+            ws = new WebSocket("ws://localhost:8086/face/ws");
             ws.onmessage = function(event) {
                 var responseArea = document.getElementById('responseArea');
                 var message = document.createElement('p');
@@ -190,29 +190,29 @@ html = """
 
 """
 
-@app.get("/face/monitor")
-async def get():
-    return HTMLResponse(html)
+# @app.get("/face/monitor")
+# async def get():
+#     return HTMLResponse(html)
 
-async def send_cpu_utilization(websocket: WebSocket):
-    while True:
-        try:
-            # Get CPU utilization using psutil
-            cpu_usage = psutil.cpu_percent(interval=1)
+# async def send_cpu_utilization(websocket: WebSocket):
+#     while True:
+#         try:
+#             # Get CPU utilization using psutil
+#             cpu_usage = psutil.cpu_percent(interval=1)
             
-            await websocket.send_text(f"CPU Utilization: {cpu_usage}%")
-        except Exception as e:
-            await websocket.send_text(f"Error: {str(e)}")
-        await asyncio.sleep(0.2)
+#             await websocket.send_text(f"CPU Utilization: {cpu_usage}%")
+#         except Exception as e:
+#             await websocket.send_text(f"Error: {str(e)}")
+#         await asyncio.sleep(0.2)
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    await send_cpu_utilization(websocket)
+# @app.websocket("/face/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await websocket.accept()
+#     await send_cpu_utilization(websocket)
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8086)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8086)
     
 # uvicorn unface:app --port 8086  --reload
