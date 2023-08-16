@@ -4,7 +4,7 @@ from faceapi import FaceModules as FM
 import tempfile
 
 app = FastAPI(
-    docs_url='face/docs/protected',
+    docs_url='/face/docs/protected',
 )
 
 
@@ -88,7 +88,31 @@ async def face_verification_bundle(main: UploadFile, verifier: UploadFile):
             temp_file.write(contents2)
             temp_file_path2 = temp_file.name
             
-        result = FM.face_verification_bundle(temp_file_path1, temp_file_path2)
+        best_accuracy = False
+        result = FM.face_verification_bundle(temp_file_path1, temp_file_path2, best_accuracy)
+        result['verified'] = bool(result['verified'])
+        
+        return result
+    else:
+        return "Image was not found!"
+
+    
+@app.post("/face/verify2")
+async def face_verification_bundle(main: UploadFile, verifier: UploadFile):
+    if main and verifier is not None:
+        contents1 = await main.read()
+        contents2 = await verifier.read()
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+            temp_file.write(contents1)
+            temp_file_path1 = temp_file.name
+            
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+            temp_file.write(contents2)
+            temp_file_path2 = temp_file.name
+            
+        best_accuracy = True
+        result = FM.face_verification_bundle(temp_file_path1, temp_file_path2, best_accuracy)
         result['verified'] = bool(result['verified'])
         
         return result

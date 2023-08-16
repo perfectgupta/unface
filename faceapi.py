@@ -57,7 +57,8 @@ class FaceModules:
     def face_extraction(image, backend):
         face_objs = DeepFace.extract_faces(img_path = image, 
                 target_size = (224, 224), 
-                detector_backend = backends[backend]
+                detector_backend = backends[backend],
+                enforce_detection=False
         )
         
         processed_result = FaceModules.preprocess_result(face_objs)
@@ -75,7 +76,7 @@ class FaceModules:
             
             for i in range(len(face)):
                 if face[i]['confidence'] <= 0.5:
-                    enforced_face = FaceModules.face_extraction(image, 3)
+                    enforced_face = FaceModules.face_extraction(image, 4)
                     return enforced_face
                 else:
                     return face
@@ -86,14 +87,15 @@ class FaceModules:
         demographies = DeepFace.analyze(
                                             img_path = image,
                                             detector_backend = backends[backend],
-                                            enforce_detection=False
+                                            enforce_detection=False,
+                                            
                                         )
         return demographies
     
     
     def face_analyzer_bundle(image):
         
-        face = FaceModules.face_analyzer(image, 1)
+        face = FaceModules.face_analyzer(image, 4)
         
         return [{ 
                     "dominant_emotion": face[0]['dominant_emotion'],
@@ -128,11 +130,15 @@ class FaceModules:
         
         return obj
     
-    def face_verification_bundle(image1, image2):
+    def face_verification_bundle(image1, image2, best_accuracy):
         
         if image1 and image2 is not None:
-            face = FaceModules.face_verification(image1, image2, 1)
-            
+            if best_accuracy:
+                face = FaceModules.face_verification(image1, image2, 4)
+                
+            else:
+                face = FaceModules.face_verification(image1, image2, 1)
+                
             return {"verified": face['verified'], "facial_areas": face['facial_areas']}
         
             # {'verified': True, 'distance': 3.3306690738754696e-16, 'threshold': 0.4, 'model': 'VGG-Face', 'detector_backend': 'ssd', 'similarity_metric': 'cosine', 'facial_areas': {'img1': {'x': 119, 'y': 141, 'w': 165, 'h': 258}, 'img2': {'x': 119, 'y': 141, 'w': 165, 'h': 258}}, 'time': 1.01}
